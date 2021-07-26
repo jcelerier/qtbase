@@ -1147,6 +1147,25 @@ void QFileSystemModelPrivate::sortChildren(int column, const QModelIndex &parent
     }
 }
 
+/*
+    \internal
+
+    Recomputes the regular expressions corresponding to the wildcards
+*/
+void QFileSystemModelPrivate::rebuildNameFilters()
+{
+    nameFilterRegexps.clear();
+
+    const QRegularExpression::PatternOptions options =
+            (filters & QDir::CaseSensitive) ? QRegularExpression::NoPatternOption
+                                            : QRegularExpression::CaseInsensitiveOption;
+
+    for (const auto &nameFilter : nameFilters) {
+        const QString& regexpString = QRegularExpression::wildcardToRegularExpression(nameFilter);
+        nameFilterRegexps.push_back(QRegularExpression{regexpString, options});
+    }
+}
+
 /*!
     \reimp
 */
@@ -1712,6 +1731,7 @@ void QFileSystemModel::setNameFilters(const QStringList &filters)
     }
 
     d->nameFilters = filters;
+    d->rebuildNameFilters();
     d->forceSort = true;
     d->delayedSort();
 #endif
@@ -2146,17 +2166,12 @@ bool QFileSystemModelPrivate::filtersAcceptsNode(const QFileSystemNode *node) co
 bool QFileSystemModelPrivate::passNameFilters(const QFileSystemNode *node) const
 {
 #if QT_CONFIG(regularexpression)
-    if (nameFilters.isEmpty())
+    if (nameFilterRegexps.isEmpty())
         return true;
 
     // Check the name regularexpression filters
     if (!(node->isDir() && (filters & QDir::AllDirs))) {
-        const QRegularExpression::PatternOptions options =
-            (filters & QDir::CaseSensitive) ? QRegularExpression::NoPatternOption
-                                            : QRegularExpression::CaseInsensitiveOption;
-
-        for (const auto &nameFilter : nameFilters) {
-            QRegularExpression rx(QRegularExpression::wildcardToRegularExpression(nameFilter), options);
+        for (const auto &rx: nameFilterRegexps) {
             QRegularExpressionMatch match = rx.match(node->fileName);
             if (match.hasMatch())
                 return true;

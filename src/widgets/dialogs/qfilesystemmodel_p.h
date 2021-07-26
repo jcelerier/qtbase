@@ -264,6 +264,7 @@ public:
         if (!delayedSortTimer.isActive())
             delayedSortTimer.start(0);
     }
+    void rebuildNameFilters();
 
     QIcon icon(const QModelIndex &index) const;
     QString name(const QModelIndex &index) const;
@@ -291,6 +292,7 @@ public:
     QHash<const QFileSystemNode*, bool> bypassFilters;
 #if QT_CONFIG(regularexpression)
     QStringList nameFilters;
+    QVector<QRegularExpression> nameFilterRegexps;
 #endif
     QHash<QString, QString> resolvedSymLinks;
 
