@@ -293,6 +293,7 @@ public:
 #if QT_CONFIG(regularexpression)
     QStringList nameFilters;
     QVector<QRegularExpression> nameFilterRegexps;
+    QVector<QString> extensionNameFilters;
 #endif
     QHash<QString, QString> resolvedSymLinks;
 
@@ -310,6 +311,7 @@ public:
     QDir::Filters filters = QDir::AllEntries | QDir::NoDotAndDotDot | QDir::AllDirs;
     int sortColumn = 0;
     Qt::SortOrder sortOrder = Qt::AscendingOrder;
+    bool noSort = false;
     bool forceSort = true;
     bool readOnly = true;
     bool setRootPath = false;

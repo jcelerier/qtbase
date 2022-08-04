@@ -1024,8 +1024,11 @@ Qt::ItemFlags QFileSystemModel::flags(const QModelIndex &index) const
 */
 void QFileSystemModelPrivate::_q_performDelayedSort()
 {
-    Q_Q(QFileSystemModel);
-    q->sort(sortColumn, sortOrder);
+    if(!noSort)
+    {
+      Q_Q(QFileSystemModel);
+      q->sort(sortColumn, sortOrder);
+    }
 }
 
 
@@ -1155,14 +1158,24 @@ void QFileSystemModelPrivate::sortChildren(int column, const QModelIndex &parent
 void QFileSystemModelPrivate::rebuildNameFilters()
 {
     nameFilterRegexps.clear();
+    extensionNameFilters.clear();
 
     const QRegularExpression::PatternOptions options =
             (filters & QDir::CaseSensitive) ? QRegularExpression::NoPatternOption
                                             : QRegularExpression::CaseInsensitiveOption;
 
-    for (const auto &nameFilter : nameFilters) {
-        const QString& regexpString = QRegularExpression::wildcardToRegularExpression(nameFilter);
-        nameFilterRegexps.push_back(QRegularExpression{regexpString, options});
+    const auto basicWildcardRegexp = QRegularExpression("\\*\\.[a-zA-Z0-9][a-zA-Z0-9.-]+$");
+    for (const auto &nameFilter : nameFilters)
+    {
+        if(auto m = basicWildcardRegexp.match(nameFilter); m.hasMatch() && !m.hasPartialMatch())
+        {
+            extensionNameFilters.push_back(nameFilter.mid(1));
+        }
+        else
+        {
+            const QString& regexpString = QRegularExpression::wildcardToRegularExpression(nameFilter);
+            nameFilterRegexps.push_back(QRegularExpression{regexpString, options});
+        }
     }
 }
 
@@ -1356,6 +1369,12 @@ void QFileSystemModel::setOptions(Options options)
     if (changed.testFlag(DontResolveSymlinks))
         setResolveSymlinks(!options.testFlag(DontResolveSymlinks));
 
+    if (changed.testFlag(DontSort))
+    {
+        Q_D(QFileSystemModel);
+        d->noSort = options.testFlag(DontSort);
+    }
+
 #if QT_CONFIG(filesystemwatcher)
     Q_D(QFileSystemModel);
     if (changed.testFlag(DontWatchForChanges))
@@ -1377,9 +1396,10 @@ void QFileSystemModel::setOptions(Options options)
 QFileSystemModel::Options QFileSystemModel::options() const
 {
     QFileSystemModel::Options result;
-    result.setFlag(DontResolveSymlinks, !resolveSymlinks());
-#if QT_CONFIG(filesystemwatcher)
     Q_D(const QFileSystemModel);
+    result.setFlag(DontResolveSymlinks, !resolveSymlinks());
+    result.setFlag(DontSort, d->noSort);
+#if QT_CONFIG(filesystemwatcher)
     result.setFlag(DontWatchForChanges, !d->fileInfoGatherer.isWatching());
 #else
     result.setFlag(DontWatchForChanges);
@@ -2166,11 +2186,15 @@ bool QFileSystemModelPrivate::filtersAcceptsNode(const QFileSystemNode *node) co
 bool QFileSystemModelPrivate::passNameFilters(const QFileSystemNode *node) const
 {
 #if QT_CONFIG(regularexpression)
-    if (nameFilterRegexps.isEmpty())
+    if (nameFilterRegexps.isEmpty() && extensionNameFilters.isEmpty())
         return true;
 
     // Check the name regularexpression filters
     if (!(node->isDir() && (filters & QDir::AllDirs))) {
+        for (const auto &ext: extensionNameFilters)
+            if(node->fileName.endsWith(ext, Qt::CaseInsensitive))
+                return true;
+
         for (const auto &rx: nameFilterRegexps) {
             QRegularExpressionMatch match = rx.match(node->fileName);
             if (match.hasMatch())
