@@ -44,7 +44,8 @@ public:
     {
         DontWatchForChanges         = 0x00000001,
         DontResolveSymlinks         = 0x00000002,
-        DontUseCustomDirectoryIcons = 0x00000004
+        DontUseCustomDirectoryIcons = 0x00000004,
+        DontSort                    = 0x00000008,
     };
     Q_ENUM(Option)
     Q_DECLARE_FLAGS(Options, Option)
