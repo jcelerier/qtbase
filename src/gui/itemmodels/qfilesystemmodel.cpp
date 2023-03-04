@@ -999,6 +999,9 @@ Qt::ItemFlags QFileSystemModel::flags(const QModelIndex &index) const
 */
 void QFileSystemModelPrivate::_q_performDelayedSort()
 {
+    if(noSort)
+        return;
+
     Q_Q(QFileSystemModel);
     q->sort(sortColumn, sortOrder);
 }
@@ -1323,6 +1326,12 @@ void QFileSystemModel::setOptions(Options options)
     if (changed.testFlag(DontResolveSymlinks))
         setResolveSymlinks(!options.testFlag(DontResolveSymlinks));
 
+    if (changed.testFlag(DontSort))
+    {
+        Q_D(QFileSystemModel);
+        d->noSort = options.testFlag(DontSort);
+    }
+    
 #if QT_CONFIG(filesystemwatcher)
     Q_D(QFileSystemModel);
     if (changed.testFlag(DontWatchForChanges))
@@ -1344,9 +1353,10 @@ void QFileSystemModel::setOptions(Options options)
 QFileSystemModel::Options QFileSystemModel::options() const
 {
     QFileSystemModel::Options result;
-    result.setFlag(DontResolveSymlinks, !resolveSymlinks());
-#if QT_CONFIG(filesystemwatcher)
     Q_D(const QFileSystemModel);
+    result.setFlag(DontResolveSymlinks, !resolveSymlinks());
+    result.setFlag(DontSort, d->noSort);
+#if QT_CONFIG(filesystemwatcher)
     result.setFlag(DontWatchForChanges, !d->fileInfoGatherer.isWatching());
 #else
     result.setFlag(DontWatchForChanges);
@@ -2157,6 +2167,10 @@ bool QFileSystemModelPrivate::passNameFilters(const QFileSystemNode *node) const
 
     // Check the name regularexpression filters
     if (!(node->isDir() && (filters & QDir::AllDirs))) {
+        for (const auto &ext: extensionNameFilters)
+            if(node->fileName.endsWith(ext, Qt::CaseInsensitive))
+                return true;
+
         const auto matchesNodeFileName = [node](const QRegularExpression &re)
         {
             return node->fileName.contains(re);
@@ -2176,15 +2190,23 @@ void QFileSystemModelPrivate::rebuildNameFilterRegexps()
 {
     nameFiltersRegexps.clear();
     nameFiltersRegexps.reserve(nameFilters.size());
-    const auto cs = (filters & QDir::CaseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive;
-    const auto convertWildcardToRegexp = [cs](const QString &nameFilter)
+
+    extensionNameFilters.clear();
+    extensionNameFilters.reserve(nameFilters.size());
+
+    static const auto basicWildcardRegexp = QRegularExpression(QStringLiteral("\\*\\.[a-zA-Z0-9][a-zA-Z0-9.-]+$"));
+    for (const auto &nameFilter : nameFilters)
     {
-        return QRegularExpression::fromWildcard(nameFilter, cs);
-    };
-    std::transform(nameFilters.constBegin(),
-                   nameFilters.constEnd(),
-                   std::back_inserter(nameFiltersRegexps),
-                   convertWildcardToRegexp);
+        if(auto m = basicWildcardRegexp.match(nameFilter); m.hasMatch() && !m.hasPartialMatch())
+        {
+            extensionNameFilters.push_back(nameFilter.mid(1));
+        }
+        else
+        {
+            const auto cs = (filters & QDir::CaseSensitive) ? Qt::CaseSensitive : Qt::CaseInsensitive;
+            nameFiltersRegexps.push_back(QRegularExpression::fromWildcard(nameFilter, cs));
+        }
+    }
 }
 #endif
 
