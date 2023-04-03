@@ -89,7 +89,7 @@ if (QT_FEATURE_testlib)
     add_subdirectory(testlib)
 endif()
 if(QT_FEATURE_printsupport)
-   add_subdirectory(printsupport)
+#   add_subdirectory(printsupport)
 endif()
 add_subdirectory(plugins)
 
