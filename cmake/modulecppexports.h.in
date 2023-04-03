@@ -6,11 +6,11 @@
 #ifndef @header_base_name_upper@_H
 #define @header_base_name_upper@_H
 
-#if defined(QT_SHARED) || !defined(QT_STATIC)
+#if 1
 #  if defined(QT_BUILD_@module_define_infix@_LIB)
 #    define Q_@module_define_infix@_EXPORT Q_DECL_EXPORT
 #  else
-#    define Q_@module_define_infix@_EXPORT Q_DECL_IMPORT
+#    define Q_@module_define_infix@_EXPORT
 #  endif
 #else
 #  define Q_@module_define_infix@_EXPORT
