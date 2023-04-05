@@ -184,6 +184,10 @@
 #    endif
 #    define Q_DECL_IMPORT     __attribute__((visibility("default")))
 #    define Q_DECL_HIDDEN     __attribute__((visibility("hidden")))
+#  else
+#    define Q_DECL_EXPORT     __attribute__((visibility("default")))
+#    define Q_DECL_IMPORT
+#    define Q_DECL_HIDDEN     __attribute__((visibility("hidden")))
 #  endif
 
 #  define Q_FUNC_INFO       __PRETTY_FUNCTION__
