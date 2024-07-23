@@ -150,7 +150,7 @@ qt_internal_extend_target(Network CONDITION QT_FEATURE_http
 
 qt_internal_extend_target(Network CONDITION QT_FEATURE_brotli AND QT_FEATURE_http
     LIBRARIES
-        WrapBrotli::WrapBrotliDec
+        WrapBrotli::WrapBrotliDec WrapBrotli::WrapBrotliCommon
 )
 
 qt_internal_extend_target(Network CONDITION QT_FEATURE_http AND QT_FEATURE_zstd
