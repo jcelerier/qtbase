@@ -9,6 +9,8 @@
 # depend on being able to find the location of json files created by AUTOMOC/moc.
 cmake_minimum_required(VERSION 3.16)
 
+set(QT_DO_EXPORT_SYMBOLS 1 CACHE INTERNAL "")
+
 # Get the repo version and CMake policy details
 include(.cmake.conf)
 
@@ -30,3 +32,5 @@ project(QtBase
 set(QT_BUILD_EXTRA_IDE_FILE_PATTERNS bin/* libexec/*)
 
 qt_internal_qtbase_build_repo()
+
+set(QT_DO_EXPORT_SYMBOLS 0 CACHE INTERNAL "")
