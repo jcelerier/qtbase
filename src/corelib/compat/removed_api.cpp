@@ -4,7 +4,7 @@
 #define QT_CORE_BUILD_REMOVED_API
 
 #include "qglobal.h"
-
+#include <QStringList>
 QT_USE_NAMESPACE
 
 #if QT_CORE_REMOVED_SINCE(6, 1)
