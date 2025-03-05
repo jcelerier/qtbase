@@ -8,6 +8,7 @@
 #include <QtGui/qpolygon.h>
 #include <QtCore/qstringbuilder.h>
 #include <QtGui/qaccessible.h>
+#include <QtGui/qguiapplication.h>
 #include <QtGui/qpainter.h>
 #include <QtWidgets/qwidget.h>
 
